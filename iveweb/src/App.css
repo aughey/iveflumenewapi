@@ -1,0 +1,133 @@
+.App {}
+
+.main {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #808080;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+[data-flume-component-type^="PRE:"] {
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+  animation: gradient 1s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes ran {
+  0% {
+    background-color: green
+  }
+
+  100% {
+    background-color: gray;
+  }
+}
+
+[data-flume-component-style="running"] {
+  animation: ran 3s;
+}
+
+[data-node-selected="true"] h2 {
+  background-color: yellow;
+}
+
+[data-flume-component="ports"] {
+  flex-direction: row;
+  align-items: flex-start
+}
+
+[data-flume-component="ports-outputs"] {
+  border-left: 1px dashed #444;
+  margin-left: 5px;
+  padding-left: 5px;
+}
+
+[data-flume-component="ports-inputs"] {
+  margin-bottom: 0px;
+}
+
+[data-port-selected="true"] {
+  background: orange !important;
+  scale: 3;
+}
+
+[data-flume-component="ports-outputs"] > div:first-child > label {
+  margin-top: 5px;
+}
+
+[data-port-name="input"] {
+  border-bottom: 1px dashed #444;
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+}
+
+[data-flume-component="node-header"] {
+  white-space: nowrap;
+}
+
+[data-flume-component="node"] {
+  width: unset !important;
+}
+
+[data-flume-component="stage"] {
+  background-color: rgb(31 48 69);
+}
+
+.viewport {
+  flex: 1;
+  overflow: hidden;
+  min-height: 100px;
+  min-width: 150px;
+  background-color: #808080;
+  /*margin-bottom: 15px;*/
+}
