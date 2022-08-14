@@ -7,7 +7,7 @@ import { Colors } from 'flume';
 // The controller is then responsible for manipulating the remote (if needed),
 // maintaining some local state, and then calling the view to manipulate itself
 // through the ui interface.
-export async function IVEController(graph_manip) {
+export async function IVEController(ui, graph_manip) {
     const colors = {
         'Double': Colors.blue,
         'Int32': Colors.green,
@@ -34,17 +34,19 @@ export async function IVEController(graph_manip) {
     const createRequest = async (type, x, y, uiCreate) => {
         // manipulate the graph with this new node
         var created = await graph_manip.create(type, x, y);
+        console.log(created);
         // returns a new node with the new id
-        if (uiCreate) {
-            uiCreatedNode(created, uiCreate);
-        }
+        ui.addNode(created);
 
         return created;
     };
 
     const nodeMoved = (id, x, y) => graph_manip.moveNode(id, x, y);
 
-    const nodeRemoved = id => graph_manip.removeNode(id);
+    const removeRequest = async id => {
+        await graph_manip.removeNode(id);
+        ui.removeNode(id);
+    }
 
     const portConnectRequest = async (fromid, fromport, toid, toport) => {
         // ask the remote to do this;
@@ -84,23 +86,17 @@ export async function IVEController(graph_manip) {
             n.Inputs.map(colorPort),
             n.Outputs.map(colorPort))
 
-    // A callback initialize to create and connect a blank slate
-    const init = (uiCreate, uiConnect) => {
-        const graph = graph_manip.getGraph();
-        for (const n of graph.Nodes) {
-            uiCreatedNode(n, uiCreate);
-        }
-        for (const c of graph.Connections) {
-            uiConnect(c.FromId, c.FromOutput, c.ToId, c.ToOutput);
-        }
-
+    // Restore the current graph
+    const g = graph_manip.getGraph();
+    for (const n of g.Nodes) {
+        ui.addNode(n);
     }
 
+
     const onmethods = {
-        init,
         createRequest,
+        removeRequest,
         nodeMoved,
-        nodeRemoved,
         portConnectRequest,
         portDisconnectRequest,
         // nodeClicked,

@@ -10,7 +10,6 @@ export default async function IVEManip(storage, remote) {
     try {
         if (GRAPH.Nodes.length > 0) {
             const nodetypes = await remote.getTypeInfo(GRAPH.Nodes.map(n => n.Kind));
-            console.log(nodetypes);
             for (var i = 0; i < GRAPH.Nodes.length; i++) {
                 GRAPH.Nodes[i] = {
                     ...nodetypes[i],
@@ -21,8 +20,6 @@ export default async function IVEManip(storage, remote) {
             }
         }
     } catch (e) {
-        console.log("Error getting typeinfo");
-        console.log(e);
         GRAPH = {
             Nodes: [],
             Connections: []
@@ -32,7 +29,7 @@ export default async function IVEManip(storage, remote) {
 
     const save = () => {
         const tosave = JSON.stringify(GRAPH);
-        console.log(tosave);
+       // console.log(tosave);
         storage.setItem("GRAPH", tosave);
     }
 
@@ -54,7 +51,7 @@ export default async function IVEManip(storage, remote) {
         });
         // See if the remote can create it
         const ret = await remote.setGraph(pending);
-        console.log(ret);
+        //console.log(ret);
 
         // Get the description of the node from the server
         const desc = (await remote.getTypeInfo([kind]))[0];
@@ -64,14 +61,14 @@ export default async function IVEManip(storage, remote) {
         dtonode.Inputs = desc.Inputs;
         dtonode.Outputs = desc.Outputs;
         
-        console.log(desc);
-        console.log(dtonode);
+        //console.log(desc);
+        //console.log(dtonode);
 
         // If we get here, the create was successful
         // Update our graph
         GRAPH = pending;
 
-        console.log(GRAPH);
+        //console.log(GRAPH);
 
         save();
 
