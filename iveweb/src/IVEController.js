@@ -1,4 +1,3 @@
-import { Colors } from 'flume';
 
 // The ui is a way for the controller to manipulate things in the view.
 // It is not the view itself.
@@ -8,19 +7,6 @@ import { Colors } from 'flume';
 // maintaining some local state, and then calling the view to manipulate itself
 // through the ui interface.
 export async function IVEController(ui, graph_manip) {
-    const colors = {
-        'Double': Colors.blue,
-        'Int32': Colors.green,
-        'String': Colors.red,
-        'Boolean': Colors.orange,
-    };
-
-    function colorPort(p) {
-        return {
-            ...p,
-            color: colors[p.type]
-        };
-    }
 
     // App handles this now before creating the controller
     // var types = await remote.getTypes();
@@ -31,11 +17,10 @@ export async function IVEController(ui, graph_manip) {
     // UI callbacks are now subscribed to whatever system in the App
     // and called directly from the App.
 
-    const createRequest = async (type, x, y, uiCreate) => {
+    const createRequest = async (type, x, y) => {
         // manipulate the graph with this new node
         var created = await graph_manip.create(type, x, y);
-        console.log(created);
-        // returns a new node with the new id
+
         ui.addNode(created);
 
         return created;
@@ -49,48 +34,47 @@ export async function IVEController(ui, graph_manip) {
     }
 
     const portConnectRequest = async (fromid, fromport, toid, toport) => {
+        console.log("portConnectRequest", fromid, fromport, toid, toport);
         // ask the remote to do this;
         await graph_manip.connect(fromid, fromport, toid, toport);
+        ui.connect(fromid, fromport, toid, toport);
     }
 
     const portDisconnectRequest = (fromid, fromport, toid, toport) => {
         // ask the remote to do this;
         graph_manip.disconnect(fromid, fromport, toid, toport);
+        ui.disconnect(fromid, fromport, toid, toport);
     }
 
     // Handle node selection
-    // const nodeClicked = id => {
-    //     if (selectedId) {
-    //         ui.deselectNode(selectedId);
-    //     }
-    //     selectedId = id;
-    //     ui.selectNode(id);
-    //     return;
-    // }
+    let selectedId;
 
-    // const stageClick = () => {
-    //     if (selectedId) {
-    //         ui.deselectNode(selectedId);
-    //         selectedId = null;
-    //     }
-    //     if (poller) {
-    //         clearInterval(poller);
-    //     }
-    // }
+    const nodeClicked = id => {
+        if (selectedId) {
+            ui.deselectNode(selectedId);
+        }
+        selectedId = id;
+        ui.selectNode(id);
+        return;
+    }
 
-    const uiCreatedNode = (n, uiCreate) =>
-        uiCreate(
-            n.Id,
-            n.Kind,
-            [n.x, n.y],
-            n.Inputs.map(colorPort),
-            n.Outputs.map(colorPort))
+    const stageClicked = () => {
+        if (selectedId) {
+            ui.deselectNode(selectedId);
+            selectedId = null;
+        }
+    }
+
 
     // Restore the current graph
     const g = graph_manip.getGraph();
     for (const n of g.Nodes) {
         ui.addNode(n);
     }
+    for (const c of g.Connections) {
+        ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
+    }
+
 
 
     const onmethods = {
@@ -99,8 +83,8 @@ export async function IVEController(ui, graph_manip) {
         nodeMoved,
         portConnectRequest,
         portDisconnectRequest,
-        // nodeClicked,
-        // stageClick,
+        nodeClicked,
+        stageClicked,
         getGraph: () => graph_manip.getGraph()
     }
     return onmethods;

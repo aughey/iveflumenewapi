@@ -85,14 +85,16 @@ export default async function IVEManip(storage, remote) {
         },
         connect: async (fromid, output, toid, input) => {
             const c = {
-                FromId: fromid,
+                From: fromid,
                 OutputPort: output,
-                ToId: toid,
+                To: toid,
                 InputPort: input
             }
             var pending = CreateMod({
                 Connections: [...GRAPH.Connections, c]
             });
+            console.log("Trying to connect graph");
+            console.log(pending);
             await remote.setGraph(pending);
             GRAPH = pending;
             save();
