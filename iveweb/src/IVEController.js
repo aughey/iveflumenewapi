@@ -36,8 +36,22 @@ export async function IVEController(ui, graph_manip, inspector) {
     const portConnectRequest = async (fromid, fromport, toid, toport) => {
         console.log("portConnectRequest", fromid, fromport, toid, toport);
         // ask the remote to do this;
+        const prevgraph = graph_manip.getGraph();
+
         await graph_manip.connect(fromid, fromport, toid, toport);
-        ui.connect(fromid, fromport, toid, toport);
+
+        const newgraph = graph_manip.getGraph();
+
+        // Clear out the old graph and rebuild it
+        for(const n of prevgraph.Nodes) {
+            ui.removeNode(n.Id);
+        }
+        for(const n of newgraph.Nodes) {
+            ui.addNode(n);
+        }
+        for(const c of newgraph.Connections) {
+            ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
+        }
     }
 
     const portDisconnectRequest = (fromid, fromport, toid, toport) => {
@@ -68,7 +82,7 @@ export async function IVEController(ui, graph_manip, inspector) {
         }
     }
     
-    const getNode = id => graph_manip.getGraph().Nodes.find(n => n.Id == id);
+    const getNode = id => graph_manip.getGraph().Nodes.find(n => n.Id === id);
 
     // Restore the current graph
     const g = graph_manip.getGraph();

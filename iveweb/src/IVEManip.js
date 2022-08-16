@@ -55,6 +55,7 @@ export default async function IVEManip(storage, remote) {
         });
         // See if the remote can create it
         const ret = await remote.setGraph(pending);
+        
         //console.log(ret);
 
         // Get the description of the node from the server
@@ -89,14 +90,44 @@ export default async function IVEManip(storage, remote) {
             save();
         },
         connect: async (fromid, output, toid, input) => {
-            const c = {
+            // We must create a new ID for the to object in order
+            // for it to rebuild properly.  re-id it, and then
+            // remap the connections.
+            const oldto = GRAPH.Nodes.find(n => n.Id === toid);
+            const newto = {
+                ...oldto,
+                Id: uuidv4()
+            }
+            const rewriteconnection = c => {
+                if(c.To === toid) {
+                    return {
+                        ...c,
+                        To: newto.Id
+                    }
+                } else if(c.From === toid) {
+                    return {
+                        ...c,
+                        From: newto.Id
+                    }
+                } else {
+                    // nothing to do
+                    return c;
+                }
+            }
+
+            console.log("New to id: " + newto.Id);
+
+            const newconnection = {
                 From: fromid,
                 OutputPort: output,
-                To: toid,
+                To: newto.Id,
                 InputPort: input
             }
             var pending = CreateMod({
-                Connections: [...GRAPH.Connections, c]
+                // Nodes without the old and with the new
+                Nodes: [...GRAPH.Nodes.filter(n => n.Id !== toid), newto],
+                // Connections rewritten to use the new to id and with the new connection
+                Connections: [...GRAPH.Connections.map(rewriteconnection), newconnection]
             });
             console.log("Trying to connect graph");
             console.log(pending);

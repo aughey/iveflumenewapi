@@ -6,6 +6,7 @@ import { http_get, http_post } from './HTTPGetPost'
 import { IVEController } from "./IVEController";
 import { IVEInterface } from "./IVEInterface_remote";
 import IVEManip from "./IVEManip";
+import ReceiveTest from "./ReceiveTest";
 
 import { Colors } from 'flume';
 const colors = {
@@ -101,13 +102,13 @@ function App() {
         />
       </div>
       <Inspector nodes={inspector}/>
-
+      <ReceiveTest />
     </div>
   );
 }
 
 const Port = (p) => (
-    <div>{p.Name} - {p.Kind}</div>
+    <div key={p.Name}>{p.Name} - {p.Kind}</div>
   )
 
 const ShowNode = ({ node }) => {

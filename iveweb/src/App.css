@@ -113,6 +113,7 @@
 
 [data-flume-component="node-header"] {
   white-space: nowrap;
+  text-transform: none;
 }
 
 [data-flume-component="node"] {
