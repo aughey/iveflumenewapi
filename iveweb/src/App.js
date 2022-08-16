@@ -9,10 +9,10 @@ import IVEManip from "./IVEManip";
 
 import { Colors } from 'flume';
 const colors = {
-    'Double': Colors.blue,
-    'Int32': Colors.green,
-    'String': Colors.red,
-    'Boolean': Colors.orange,
+  'Double': Colors.blue,
+  'Int32': Colors.green,
+  'String': Colors.red,
+  'Boolean': Colors.orange,
 };
 
 
@@ -51,6 +51,7 @@ const FlumeAPIToControllerAPI = api => {
 function App() {
   const [nodetypes, setNodeTypes] = useState([]);
   const [uiEvents, setUIEvents] = useState([]);
+  const [inspector, setInspector] = useState([]);
 
   const apiCallback = useCallback(async api => {
     console.log("in APICallback")
@@ -69,9 +70,13 @@ function App() {
     }
     setNodeTypes(config.nodeTypes);
 
+    const inspectorapi = {
+      show: nodes => setInspector(nodes)
+    }
+
     // Create a manipulator and controller
     const manip = await IVEManip(localStorage, remote);
-    const controller = await IVEController(FlumeAPIToControllerAPI(api), manip);
+    const controller = await IVEController(FlumeAPIToControllerAPI(api), manip, inspectorapi);
 
     // Bind our uievents into the controller
     const uiEvents = {
@@ -88,16 +93,42 @@ function App() {
 
   return (
     <div className="App">
-      <div style={{ width: 1600, height: 900 }}>
+      <div style={{ width: '100%', height: 900 }}>
         <NodeEditor
           nodeTypes={nodetypes}
           apiCallback={apiCallback}
           uiEvents={uiEvents}
         />
       </div>
+      <Inspector nodes={inspector}/>
 
     </div>
   );
+}
+
+const Port = (p) => (
+    <div>{p.Name} - {p.Kind}</div>
+  )
+
+const ShowNode = ({ node }) => {
+  return (
+    <div>
+      <div>{node.Kind}</div>
+      <h2>Inputs</h2>
+      <div>{node.Inputs.map(Port)}</div>
+      <h2>Outputs</h2>
+      <div>{node.Outputs.map(Port)}</div>
+    </div>
+  )
+}
+
+const Inspector = ({ nodes }) => {
+  return (
+    <div className='inspector' style={{ minWidth: 200, minHeight: 200, position: 'absolute', left: 0, top: 0, border: '1px solid gray' }}>
+    <h1>Inspector</h1>
+    {nodes.map(node => (<ShowNode key={node.Id} node={node} />))}
+  </div>
+  )
 }
 
 export default App;

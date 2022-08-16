@@ -25,10 +25,14 @@ export default async function IVEManip(storage, remote) {
             Connections: []
         };
     }
+
+    // Load that graph on the remote
+    await remote.setGraph(GRAPH);
    
 
     const save = () => {
         const tosave = JSON.stringify(GRAPH);
+        console.log("saved")
        // console.log(tosave);
         storage.setItem("GRAPH", tosave);
     }
@@ -78,6 +82,7 @@ export default async function IVEManip(storage, remote) {
     return {
         getGraph: () => GRAPH,
         moveNode: (id, x, y) => {
+            console.log("moving node", id, x, y);
             const n = GRAPH.Nodes.find(n => n.Id === id);
             n.x = x;
             n.y = y;
@@ -111,7 +116,7 @@ export default async function IVEManip(storage, remote) {
         },
         removeNode: async id => {
             const without = GRAPH.Nodes.filter(n => n.Id !== id);
-            const connections_without = GRAPH.Connections.filter(c => c.FromId !== id && c.ToId !== id);
+            const connections_without = GRAPH.Connections.filter(c => c.From !== id && c.To !== id);
             var pending = CreateMod({
                 Nodes: without,
                 Connections: connections_without

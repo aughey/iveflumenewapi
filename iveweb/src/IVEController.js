@@ -6,7 +6,7 @@
 // The controller is then responsible for manipulating the remote (if needed),
 // maintaining some local state, and then calling the view to manipulate itself
 // through the ui interface.
-export async function IVEController(ui, graph_manip) {
+export async function IVEController(ui, graph_manip, inspector) {
 
     // App handles this now before creating the controller
     // var types = await remote.getTypes();
@@ -52,9 +52,11 @@ export async function IVEController(ui, graph_manip) {
     const nodeClicked = id => {
         if (selectedId) {
             ui.deselectNode(selectedId);
+            inspector.show([])
         }
         selectedId = id;
         ui.selectNode(id);
+        inspector.show([getNode(id)])
         return;
     }
 
@@ -62,9 +64,11 @@ export async function IVEController(ui, graph_manip) {
         if (selectedId) {
             ui.deselectNode(selectedId);
             selectedId = null;
+            inspector.show([])
         }
     }
-
+    
+    const getNode = id => graph_manip.getGraph().Nodes.find(n => n.Id == id);
 
     // Restore the current graph
     const g = graph_manip.getGraph();
