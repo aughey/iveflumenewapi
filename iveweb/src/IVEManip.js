@@ -77,7 +77,7 @@ export default async function IVEManip(storage, remote) {
 
         save();
 
-        return dtonode;
+        return desc;
     }
 
     return {
@@ -131,9 +131,10 @@ export default async function IVEManip(storage, remote) {
             });
             console.log("Trying to connect graph");
             console.log(pending);
-            await remote.setGraph(pending);
+            const ret = await remote.setGraph(pending);
             GRAPH = pending;
             save();
+            return ret;
         },
         disconnect: async (fromid, output, toid, input) => {
             const without = GRAPH.Connections.filter(c => c.FromId !== fromid && c.OutputPort !== output && c.ToId !== toid && c.InputPort !== input);
@@ -141,9 +142,10 @@ export default async function IVEManip(storage, remote) {
             var pending = CreateMod({
                 Connections: without
             });
-            await remote.setGraph(pending);
+            const ret = await remote.setGraph(pending);
             GRAPH = pending;
             save();
+            return ret;
         },
         removeNode: async id => {
             const without = GRAPH.Nodes.filter(n => n.Id !== id);
@@ -152,9 +154,10 @@ export default async function IVEManip(storage, remote) {
                 Nodes: without,
                 Connections: connections_without
             });
-            await remote.setGraph(pending);
+            const ret = await remote.setGraph(pending);
             GRAPH = pending;
             save();
+            return ret;
         },
         create
     }

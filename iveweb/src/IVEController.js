@@ -21,7 +21,7 @@ export async function IVEController(ui, graph_manip, inspector) {
         // manipulate the graph with this new node
         var created = await graph_manip.create(type, x, y);
 
-        ui.addNode(created);
+        const ret = ui.addNode(created);
 
         return created;
     };
@@ -33,15 +33,16 @@ export async function IVEController(ui, graph_manip, inspector) {
         ui.removeNode(id);
     }
 
-    const portConnectRequest = async (fromid, fromport, toid, toport) => {
-        console.log("portConnectRequest", fromid, fromport, toid, toport);
-        // ask the remote to do this;
-        const prevgraph = graph_manip.getGraph();
+    const colorUI = (graph,ret) => {
+        console.log("Coloring");
+        console.log(ret);
+        for (const node of graph.nodes) {
+          
+        }
+    }
 
-        await graph_manip.connect(fromid, fromport, toid, toport);
-
-        const newgraph = graph_manip.getGraph();
-
+    const rebuildGraph = (prevgraph,newgraph) => {
+        
         // Clear out the old graph and rebuild it
         for(const n of prevgraph.Nodes) {
             ui.removeNode(n.Id);
@@ -52,6 +53,18 @@ export async function IVEController(ui, graph_manip, inspector) {
         for(const c of newgraph.Connections) {
             ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
         }
+    }
+
+    const portConnectRequest = async (fromid, fromport, toid, toport) => {
+        console.log("portConnectRequest", fromid, fromport, toid, toport);
+        // ask the remote to do this;
+        const prevgraph = graph_manip.getGraph();
+
+        await graph_manip.connect(fromid, fromport, toid, toport);
+
+        const newgraph = graph_manip.getGraph();
+
+        rebuildGraph(prevgraph,newgraph);
     }
 
     const portDisconnectRequest = (fromid, fromport, toid, toport) => {

@@ -18,8 +18,6 @@ export default function ReceiveTest() {
         client.onConnect = function (frame) {
             // Do something, all subscribes must be done is this callback
             // This is needed because this will be executed after a (re)connect
-            console.log("Stomp connected");
-            console.log(frame);
             setStomp(client);
         };
 

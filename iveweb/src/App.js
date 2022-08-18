@@ -1,6 +1,6 @@
 import { NodeEditor } from "flume";
 import { FlumeConfig } from 'flume'
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import { http_get, http_post } from './HTTPGetPost'
 import { IVEController } from "./IVEController";
@@ -9,6 +9,7 @@ import IVEManip from "./IVEManip";
 import ReceiveTest from "./ReceiveTest";
 
 import { Colors } from 'flume';
+import InspectorTap from "./InspectorTap";
 const colors = {
   'Double': Colors.blue,
   'Int32': Colors.green,
@@ -53,11 +54,23 @@ function App() {
   const [nodetypes, setNodeTypes] = useState([]);
   const [uiEvents, setUIEvents] = useState([]);
   const [inspector, setInspector] = useState([]);
+  const [tap, setTap] = useState(null);
 
   const apiCallback = useCallback(async api => {
     console.log("in APICallback")
     // Create a controller and then subscribe to the graph changes
-    const remote = IVEInterface(http_get, http_post);
+    const downstream_remote = IVEInterface(http_get, http_post);
+
+    // Create a tap for setting the graph
+    // This is wonky way to patch the setting of a graph
+    const tap = await InspectorTap(downstream_remote.setGraph);
+    setTap(tap);
+    const remote = {
+      getTypes: downstream_remote.getTypes,
+      getTypeInfo: downstream_remote.getTypeInfo,
+      setGraph: tap.setGraph
+    }
+
     // Get the types and setup our types in the UI
     var types = await remote.getTypes();
     const config = new FlumeConfig();
@@ -90,6 +103,10 @@ function App() {
       stageClicked: () => controller.stageClicked()
     }
     setUIEvents(uiEvents);
+
+    return () => {
+      tap.dispose();
+    }
   }, [])
 
   return (
@@ -101,7 +118,7 @@ function App() {
           uiEvents={uiEvents}
         />
       </div>
-      <Inspector nodes={inspector}/>
+      {tap ? <Inspector tap={tap} nodes={inspector}/> : null}
       <ReceiveTest />
     </div>
   );
@@ -111,7 +128,13 @@ const Port = (p) => (
     <div key={p.Name}>{p.Name} - {p.Kind}</div>
   )
 
-const ShowNode = ({ node }) => {
+const ShowNode = ({ node,tap }) => {
+  useEffect(() => {
+    const sub = tap.tap(node.Id, data => {
+      console.log("Got data from tap for node", node.Id, data);
+    })
+    return sub;
+  },[node,tap])
   return (
     <div>
       <div>{node.Kind}</div>
@@ -123,11 +146,11 @@ const ShowNode = ({ node }) => {
   )
 }
 
-const Inspector = ({ nodes }) => {
+const Inspector = ({ nodes, tap }) => {
   return (
     <div className='inspector' style={{ minWidth: 200, minHeight: 200, position: 'absolute', left: 0, top: 0, border: '1px solid gray' }}>
     <h1>Inspector</h1>
-    {nodes.map(node => (<ShowNode key={node.Id} node={node} />))}
+    {nodes.map(node => (<ShowNode key={node.Id} tap={tap} node={node} />))}
   </div>
   )
 }
