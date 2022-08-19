@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import React from 'react';
-import { Client, Message } from '@stomp/stompjs';
-import { throttle } from 'lodash';
+import { Client } from '@stomp/stompjs';
 
 export default function ReceiveTest() {
     const [stomp,setStomp] = React.useState(null);

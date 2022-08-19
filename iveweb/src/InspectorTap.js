@@ -1,9 +1,13 @@
 import { v4 as uuid } from 'uuid';
-import { Client, Message } from '@stomp/stompjs';
+import { Client } from '@stomp/stompjs';
+import EventEmitter from 'events';
 
 export default async function InspectorTap(downstream_setgraph) {
     let tapped = [];
     let last_graph = { Nodes: [], Connections: [] };
+
+    const events = new EventEmitter();
+
 
     const setGraph = async (graph) => {
         console.log("Setting graph")
@@ -27,13 +31,18 @@ export default async function InspectorTap(downstream_setgraph) {
             resolve();
         }
     });
+    stomp.onDisconnect = function (frame) {
+        console.log("Stomp disconnected");
+    }
 
     // Create a queue for the inspector to use
     const myqueue = "inspectorqueue-" + uuid();
 
     const subscription = stomp.subscribe('/queue/' + myqueue, message => {
-        console.log("Got message in InspectorTap");
-        console.log(message.body);
+        //console.log("Got message in InspectorTap");
+        //console.log(message.body);
+        const data = JSON.parse(message.body);
+        events.emit(data._ID, data);
     }, {
         durable: false,
         "auto-delete": true
@@ -60,10 +69,10 @@ export default async function InspectorTap(downstream_setgraph) {
         });
     }
 
-    const rabbitmq_host = addInfrastructure('Value-StringValue', { State: "rabbitmq" });
+    const rabbitmq_host = addInfrastructure('Value-StringValue', { State: "localhost" });
     const rabbitmq_connect = addInfrastructure('RabbitMQOperations-ConnectToChannel');
     const rabbitmq_queuename = addInfrastructure('Value-StringValue', { State: myqueue });
-    const throttle_time = addInfrastructure('Value-Int32Value', { State: '250' });
+    const throttle_time = addInfrastructure('Value-Int32Value', { State: parseInt(1000/10.0).toString() });
     const send_action = addInfrastructure('RabbitMQOperations-SendQueueAction');
 
     connectInfrastructure(rabbitmq_host, "output", rabbitmq_connect, "host");
@@ -73,6 +82,10 @@ export default async function InspectorTap(downstream_setgraph) {
     // There is a race condition with setting graphs and inspecting in the middle.
 
     const runTap = async graph => {
+        if(tapped.length === 0) {
+            return await downstream_setgraph(graph);
+        }
+
         const newnodes = [];
         const newconnections = [];
 
@@ -80,15 +93,15 @@ export default async function InspectorTap(downstream_setgraph) {
         newnodes.push(...infrastructure.Nodes);
         newconnections.push(...infrastructure.Connections);
 
-       
+
         for (const tap_id of tapped) {
-            const node = graph.Nodes.find(n => n.Id == tap_id);
+            const node = graph.Nodes.find(n => n.Id === tap_id);
             if (!node) {
                 console.log("Node not found in tap: ", tap_id);
                 continue;
             }
 
-            const addNode = (kind,props) => {
+            const addNode = (kind, props) => {
                 const node = {
                     Kind: kind,
                     Id: uuid(),
@@ -105,7 +118,7 @@ export default async function InspectorTap(downstream_setgraph) {
                     InputPort: input
                 });
             }
-    
+
             const nodedict = addNode("ValueOperations-StringDictionary");
             const throttled_write = addNode("RabbitMQOperations-ThrottledStringAction");
             addConnection(throttle_time, "output", throttled_write, "ms");
@@ -123,14 +136,14 @@ export default async function InspectorTap(downstream_setgraph) {
             addConnection(myid, "output", writeid, "value");
             addConnection(underscore_id, "output", writeid, "key");
 
-            let dict_id = writeid.Id;    
+            let dict_id = writeid.Id;
 
             // Look at its outputs
             for (const output of node.Outputs) {
                 // Connect the output of this node to the serializer
                 const serialize = addNode("ValueOperations-JSONSerializeOrNull");
                 addConnection(node, output.Name, serialize, "input");
-                
+
                 // Connect the last dictionary output to this set
                 const writedict = addNode("ValueOperations-DictionarySet");
                 newconnections.push({
@@ -149,7 +162,7 @@ export default async function InspectorTap(downstream_setgraph) {
 
             // Serialize the final dict
             const serialize_dict = addNode("ValueOperations-JSONSerialize");
-            addConnection({Id: dict_id}, "output", serialize_dict, "input");
+            addConnection({ Id: dict_id }, "output", serialize_dict, "input");
             // And connect to the throttled write
             addConnection(serialize_dict, "json", send_string, "data");
         }
@@ -178,7 +191,10 @@ export default async function InspectorTap(downstream_setgraph) {
 
         runTap(last_graph);
 
+        events.on(id, callback);
+
         return () => {
+            events.off(id,callback);
             console.log("Untapping", id);
             tapped = tapped.filter(i => i !== id);
             runTap(last_graph);
@@ -190,6 +206,7 @@ export default async function InspectorTap(downstream_setgraph) {
         setGraph: setGraph,
         dispose: () => {
             subscription.unsubscribe();
+            stomp.deactivate();
         }
     }
 }

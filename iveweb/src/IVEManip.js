@@ -62,6 +62,8 @@ export default async function IVEManip(storage, remote) {
         const desc = (await remote.getTypeInfo([kind]))[0];
 
         desc.Id = dtonode.Id;
+        desc.x = x;
+        desc.y = y;
 
         dtonode.Inputs = desc.Inputs;
         dtonode.Outputs = desc.Outputs;

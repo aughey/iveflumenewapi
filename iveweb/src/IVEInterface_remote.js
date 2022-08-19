@@ -1,5 +1,5 @@
 const prefix = "/api/";
-const url = (path) => 'http://127.0.0.1:4000' + prefix + path;
+const url = (path) => prefix + path;
 
 // little function to serialize all calls
 function CreateSerializer() {

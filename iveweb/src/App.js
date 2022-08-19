@@ -56,6 +56,8 @@ function App() {
   const [inspector, setInspector] = useState([]);
   const [tap, setTap] = useState(null);
 
+  console.log("In app function")
+
   const apiCallback = useCallback(async api => {
     console.log("in APICallback")
     // Create a controller and then subscribe to the graph changes
@@ -105,6 +107,7 @@ function App() {
     setUIEvents(uiEvents);
 
     return () => {
+      console.log("App unmounting")
       tap.dispose();
     }
   }, [])
@@ -119,29 +122,33 @@ function App() {
         />
       </div>
       {tap ? <Inspector tap={tap} nodes={inspector}/> : null}
-      <ReceiveTest />
     </div>
   );
 }
 
-const Port = (p) => (
-    <div key={p.Name}>{p.Name} - {p.Kind}</div>
+const Port = (p,value) => (
+    <div key={p.Name}>{p.Name} - {p.Kind} = {value ? value : "UNKNOWN"}</div>
   )
 
 const ShowNode = ({ node,tap }) => {
+  const [portvalues, setPortValues] = useState(undefined);
   useEffect(() => {
     const sub = tap.tap(node.Id, data => {
-      console.log("Got data from tap for node", node.Id, data);
+      //console.log("Got data from tap for node", node.Id, data);
+      setPortValues(data);
     })
     return sub;
   },[node,tap])
+
+  const value = p => portvalues ? portvalues[p.Name] : "Retrieving...";
+
   return (
     <div>
       <div>{node.Kind}</div>
       <h2>Inputs</h2>
       <div>{node.Inputs.map(Port)}</div>
       <h2>Outputs</h2>
-      <div>{node.Outputs.map(Port)}</div>
+      <div>{node.Outputs.map(p => Port(p,value(p)))}</div>
     </div>
   )
 }

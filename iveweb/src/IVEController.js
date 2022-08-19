@@ -21,6 +21,9 @@ export async function IVEController(ui, graph_manip, inspector) {
         // manipulate the graph with this new node
         var created = await graph_manip.create(type, x, y);
 
+        console.log("Create request: " + type + " at " + x + "," + y);
+        console.log(created);
+
         const ret = ui.addNode(created);
 
         return created;
@@ -30,6 +33,9 @@ export async function IVEController(ui, graph_manip, inspector) {
 
     const removeRequest = async id => {
         await graph_manip.removeNode(id);
+        if(selectedId === id) {
+            stageClicked();
+        }
         ui.removeNode(id);
     }
 
@@ -67,9 +73,9 @@ export async function IVEController(ui, graph_manip, inspector) {
         rebuildGraph(prevgraph,newgraph);
     }
 
-    const portDisconnectRequest = (fromid, fromport, toid, toport) => {
+    const portDisconnectRequest = async (fromid, fromport, toid, toport) => {
         // ask the remote to do this;
-        graph_manip.disconnect(fromid, fromport, toid, toport);
+        await graph_manip.disconnect(fromid, fromport, toid, toport);
         ui.disconnect(fromid, fromport, toid, toport);
     }
 
