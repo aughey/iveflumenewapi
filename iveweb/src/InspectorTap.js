@@ -114,7 +114,16 @@ export default async function InspectorTap(downstream_setgraph) {
             const send_string = addNode("ActionOperations-StringAction");
             addConnection(throttled_write, "throttled_action", send_string, "action");
 
-            let dict_id = nodedict.Id;    
+            // Write the ID of this node into a key _ID
+            const myid = addNode("Value-StringValue", { State: node.Id });
+            const underscore_id = addNode("Value-StringValue", { State: "_ID" });
+            const writeid = addNode("ValueOperations-DictionarySet");
+
+            addConnection(nodedict, "output", writeid, "dict");
+            addConnection(myid, "output", writeid, "value");
+            addConnection(underscore_id, "output", writeid, "key");
+
+            let dict_id = writeid.Id;    
 
             // Look at its outputs
             for (const output of node.Outputs) {
