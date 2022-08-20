@@ -166,9 +166,9 @@ export default async function InspectorTap(downstream_setgraph) {
             // And connect to the throttled write
             addConnection(serialize_dict, "json", send_string, "data");
         }
-        console.log(graph);
-        console.log(newnodes);
-        console.log(newconnections);
+        // console.log(graph);
+        // console.log(newnodes);
+        // console.log(newconnections);
         const amended_graph = {
             Nodes: [...graph.Nodes, ...newnodes],
             Connections: [...graph.Connections, ...newconnections]
@@ -186,16 +186,15 @@ export default async function InspectorTap(downstream_setgraph) {
 
     // Tap a node
     const tap = (id, callback) => {
-        tapped.push(id);
-        console.log(`Tapping ${id}`);
-
-        runTap(last_graph);
+        if(!tapped.includes(id)) {
+            tapped.push(id);
+            runTap(last_graph);
+        }
 
         events.on(id, callback);
 
         return () => {
             events.off(id,callback);
-            console.log("Untapping", id);
             tapped = tapped.filter(i => i !== id);
             runTap(last_graph);
         }

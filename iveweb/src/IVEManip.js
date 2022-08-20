@@ -28,12 +28,12 @@ export default async function IVEManip(storage, remote) {
 
     // Load that graph on the remote
     await remote.setGraph(GRAPH);
-   
+
 
     const save = () => {
         const tosave = JSON.stringify(GRAPH);
         console.log("saved")
-       // console.log(tosave);
+        // console.log(tosave);
         storage.setItem("GRAPH", tosave);
     }
 
@@ -55,7 +55,7 @@ export default async function IVEManip(storage, remote) {
         });
         // See if the remote can create it
         const ret = await remote.setGraph(pending);
-        
+
         //console.log(ret);
 
         // Get the description of the node from the server
@@ -67,7 +67,7 @@ export default async function IVEManip(storage, remote) {
 
         dtonode.Inputs = desc.Inputs;
         dtonode.Outputs = desc.Outputs;
-        
+
         //console.log(desc);
         //console.log(dtonode);
 
@@ -80,6 +80,56 @@ export default async function IVEManip(storage, remote) {
         save();
 
         return desc;
+    }
+
+    const setNodeState = async (id, value) => {
+        // Create a new graph with the this node having a new id
+        const newid = uuidv4();
+        const pending = reIdNode(GRAPH, id, newid);
+        const node = pending.Nodes.find(n => n.Id === newid);
+        // it is ok to write directly to this because it's a copy
+        node.Properties = {
+            ...node.Properties,
+            State: value
+        }
+
+        // See if the remote can create it
+        await remote.setGraph(pending);
+        // If we get here, the create was successful
+        GRAPH = pending;
+        save();
+        return node;
+    }
+
+    function reIdNode(graph, id, newid) {
+        const oldnode = graph.Nodes.find(n => n.Id === id);
+        const newnode = {
+            ...oldnode,
+            Id: newid
+        }
+        const rewriteconnection = c => {
+            if (c.To === id) {
+                return {
+                    ...c,
+                    To: newid
+                }
+            } else if (c.From === id) {
+                return {
+                    ...c,
+                    From: newid
+                }
+            } else {
+                // nothing to do
+                return c;
+            }
+        }
+
+        return {
+            // Nodes without the old and with the new
+            Nodes: [...graph.Nodes.filter(n => n.Id !== id), newnode],
+            // Connections rewritten to use the new to id and with the new connection
+            Connections: [...graph.Connections.map(rewriteconnection)]
+        };
     }
 
     return {
@@ -101,12 +151,12 @@ export default async function IVEManip(storage, remote) {
                 Id: uuidv4()
             }
             const rewriteconnection = c => {
-                if(c.To === toid) {
+                if (c.To === toid) {
                     return {
                         ...c,
                         To: newto.Id
                     }
-                } else if(c.From === toid) {
+                } else if (c.From === toid) {
                     return {
                         ...c,
                         From: newto.Id
@@ -161,7 +211,8 @@ export default async function IVEManip(storage, remote) {
             save();
             return ret;
         },
-        create
+        create,
+        setNodeState
     }
 }
 

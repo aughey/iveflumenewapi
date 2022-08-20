@@ -33,30 +33,30 @@ export async function IVEController(ui, graph_manip, inspector) {
 
     const removeRequest = async id => {
         await graph_manip.removeNode(id);
-        if(selectedId === id) {
+        if (selectedId === id) {
             stageClicked();
         }
         ui.removeNode(id);
     }
 
-    const colorUI = (graph,ret) => {
+    const colorUI = (graph, ret) => {
         console.log("Coloring");
         console.log(ret);
         for (const node of graph.nodes) {
-          
+
         }
     }
 
-    const rebuildGraph = (prevgraph,newgraph) => {
-        
+    const rebuildGraph = (prevgraph, newgraph) => {
+
         // Clear out the old graph and rebuild it
-        for(const n of prevgraph.Nodes) {
+        for (const n of prevgraph.Nodes) {
             ui.removeNode(n.Id);
         }
-        for(const n of newgraph.Nodes) {
+        for (const n of newgraph.Nodes) {
             ui.addNode(n);
         }
-        for(const c of newgraph.Connections) {
+        for (const c of newgraph.Connections) {
             ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
         }
     }
@@ -68,15 +68,19 @@ export async function IVEController(ui, graph_manip, inspector) {
 
         await graph_manip.connect(fromid, fromport, toid, toport);
 
+        stageClicked();
+
         const newgraph = graph_manip.getGraph();
 
-        rebuildGraph(prevgraph,newgraph);
+        rebuildGraph(prevgraph, newgraph);
+        
     }
 
     const portDisconnectRequest = async (fromid, fromport, toid, toport) => {
         // ask the remote to do this;
         await graph_manip.disconnect(fromid, fromport, toid, toport);
         ui.disconnect(fromid, fromport, toid, toport);
+        stageClicked()
     }
 
     // Handle node selection
@@ -100,7 +104,7 @@ export async function IVEController(ui, graph_manip, inspector) {
             inspector.show([])
         }
     }
-    
+
     const getNode = id => graph_manip.getGraph().Nodes.find(n => n.Id === id);
 
     // Restore the current graph
@@ -110,6 +114,23 @@ export async function IVEController(ui, graph_manip, inspector) {
     }
     for (const c of g.Connections) {
         ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
+    }
+
+    const setNodeState = async (id, value) => {
+        stageClicked();
+        const newnode = await graph_manip.setNodeState(id, value);
+
+        ui.removeNode(id);
+        ui.addNode(newnode);
+
+        const myConnection = c => c.From === newnode.Id || c.To === newnode.Id;
+
+        for (const c of graph_manip.getGraph().Connections.filter(myConnection)) {
+            console.log(c);
+            ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
+        }
+
+        nodeClicked(newnode.Id);
     }
 
 
@@ -122,6 +143,7 @@ export async function IVEController(ui, graph_manip, inspector) {
         portDisconnectRequest,
         nodeClicked,
         stageClicked,
+        setNodeState,
         getGraph: () => graph_manip.getGraph()
     }
     return onmethods;

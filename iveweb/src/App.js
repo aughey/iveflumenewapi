@@ -55,11 +55,9 @@ function App() {
   const [uiEvents, setUIEvents] = useState([]);
   const [inspector, setInspector] = useState([]);
   const [tap, setTap] = useState(null);
-
-  console.log("In app function")
+  const [setNodeState, setSetNodeState] = useState(null);
 
   const apiCallback = useCallback(async api => {
-    console.log("in APICallback")
     // Create a controller and then subscribe to the graph changes
     const downstream_remote = IVEInterface(http_get, http_post);
 
@@ -106,11 +104,17 @@ function App() {
     }
     setUIEvents(uiEvents);
 
+    setSetNodeState(() => (id,state) => { // Wonky double function to deal with the useState using a function to set it, but we want to set it to a function
+      //console.log("Actuallying setting node state" + id + " " + state)
+      controller.setNodeState(id, state);
+    })
+
     return () => {
       console.log("App unmounting")
       tap.dispose();
     }
   }, [])
+
 
   return (
     <div className="App">
@@ -121,44 +125,68 @@ function App() {
           uiEvents={uiEvents}
         />
       </div>
-      {tap ? <Inspector tap={tap} nodes={inspector}/> : null}
+      {tap ? <Inspector tap={tap} nodes={inspector} setState={setNodeState}/> : null}
     </div>
   );
 }
 
-const Port = (p,value) => (
-    <div key={p.Name}>{p.Name} - {p.Kind} = {value ? value : "UNKNOWN"}</div>
-  )
+const Port = (p, value) => (
+  <div key={p.Name}>{p.Name} - {p.Kind} = {value ? value : "UNKNOWN"}</div>
+)
 
-const ShowNode = ({ node,tap }) => {
+const SetState = ({ node, initial_value, onSetState }) => {
+  const [value, setValue] = useState(initial_value);
+
+  const KeyDown = e => {
+    // if they pressed enter
+    if (e.key === 'Enter') {
+      onSetState(value);
+    }
+  }
+
+  return (<div>
+    Set: <input value={value} onChange={e => setValue(e.target.value)} onKeyDown={KeyDown} />
+  </div>)
+}
+
+const ShowNode = ({ node, tap, setState }) => {
   const [portvalues, setPortValues] = useState(undefined);
+
   useEffect(() => {
     const sub = tap.tap(node.Id, data => {
       //console.log("Got data from tap for node", node.Id, data);
       setPortValues(data);
     })
     return sub;
-  },[node,tap])
+  }, [node, tap])
 
   const value = p => portvalues ? portvalues[p.Name] : "Retrieving...";
+
+  const isValueKind = node.Kind.match(/^Value-[a-zA-Z0-9]+Value$/);
+
+  const onSetState = value => {
+    const trimmedvalue = value.trim();
+    setState(node.Id, trimmedvalue);
+  }
 
   return (
     <div>
       <div>{node.Kind}</div>
+      {(isValueKind && portvalues?.output) ? (<SetState node={node} onSetState={onSetState} initial_value={JSON.parse(portvalues.output)} />) : null}
       <h2>Inputs</h2>
-      <div>{node.Inputs.map(Port)}</div>
+      <div>{node.Inputs.map(p => Port(p))}</div>
       <h2>Outputs</h2>
-      <div>{node.Outputs.map(p => Port(p,value(p)))}</div>
+      <div>{node.Outputs.map(p => Port(p, value(p)))}</div>
     </div>
   )
 }
 
-const Inspector = ({ nodes, tap }) => {
+const Inspector = ({ nodes, tap, setState }) => {
   return (
     <div className='inspector' style={{ minWidth: 200, minHeight: 200, position: 'absolute', left: 0, top: 0, border: '1px solid gray' }}>
-    <h1>Inspector</h1>
-    {nodes.map(node => (<ShowNode key={node.Id} tap={tap} node={node} />))}
-  </div>
+      <h1>Inspector</h1>
+      {nodes.map(node => (<ShowNode key={node.Id} tap={tap} node={node} setState={setState} />))}
+    </div>
   )
 }
 
