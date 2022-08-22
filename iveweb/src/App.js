@@ -1,12 +1,11 @@
 import { NodeEditor } from "flume";
 import { FlumeConfig } from 'flume'
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { http_get, http_post } from './HTTPGetPost'
 import { IVEController } from "./IVEController";
 import { IVEInterface } from "./IVEInterface_remote";
 import IVEManip from "./IVEManip";
-import ReceiveTest from "./ReceiveTest";
 
 import { Colors } from 'flume';
 import InspectorTap from "./InspectorTap";
@@ -46,7 +45,8 @@ const FlumeAPIToControllerAPI = api => {
     connect: (fromid, fromport, toid, toport) => api.addConnection(fromid, fromport, toid, toport),
     disconnect: (fromid, fromport, toid, toport) => api.removeConnection(fromid, fromport, toid, toport),
     selectNode: id => api.updateProperties(id, { "data-node-selected": "true" }),
-    deselectNode: id => api.updateProperties(id, { "data-node-selected": "false" })
+    deselectNode: id => api.updateProperties(id, { "data-node-selected": "false" }),
+    info: str => api.showToast("info",str,"info",4000)
   }
 }
 
@@ -57,7 +57,10 @@ function App() {
   const [tap, setTap] = useState(null);
   const [setNodeState, setSetNodeState] = useState(null);
 
+  const apiref = useRef(null);
+
   const apiCallback = useCallback(async api => {
+    apiref.current = api;
     // Create a controller and then subscribe to the graph changes
     const downstream_remote = IVEInterface(http_get, http_post);
 
@@ -115,6 +118,9 @@ function App() {
     }
   }, [])
 
+  const showToast = () => {
+    apiref.current.info("title","message","info",4000);
+  }
 
   return (
     <div className="App">
@@ -125,6 +131,7 @@ function App() {
           uiEvents={uiEvents}
         />
       </div>
+      <button onClick={showToast}>Show Toast</button>
       {tap ? <Inspector tap={tap} nodes={inspector} setState={setNodeState}/> : null}
     </div>
   );

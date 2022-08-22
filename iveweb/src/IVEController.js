@@ -24,7 +24,9 @@ export async function IVEController(ui, graph_manip, inspector) {
         console.log("Create request: " + type + " at " + x + "," + y);
         console.log(created);
 
-        const ret = ui.addNode(created);
+        ui.addNode(created);
+
+        ui.info("Created node " + type);
 
         return created;
     };
@@ -73,7 +75,7 @@ export async function IVEController(ui, graph_manip, inspector) {
         const newgraph = graph_manip.getGraph();
 
         rebuildGraph(prevgraph, newgraph);
-        
+
     }
 
     const portDisconnectRequest = async (fromid, fromport, toid, toport) => {
@@ -118,17 +120,26 @@ export async function IVEController(ui, graph_manip, inspector) {
 
     const setNodeState = async (id, value) => {
         stageClicked();
+        const oldconnections = graph_manip.getGraph().Connections.filter(c => c.From === id || c.To === id);
         const newnode = await graph_manip.setNodeState(id, value);
 
+
         ui.removeNode(id);
+
         ui.addNode(newnode);
 
-        const myConnection = c => c.From === newnode.Id || c.To === newnode.Id;
+        ui.info(`Set node ${id} to ${value}`);
 
-        for (const c of graph_manip.getGraph().Connections.filter(myConnection)) {
-            console.log(c);
-            ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
-        }
+        // Silly hack because the node seems to need to be removed first after an update cycle
+        // in Flume (we shouldn't know this).
+        setTimeout(() => {
+            const myConnection = c => c.From === newnode.Id || c.To === newnode.Id;
+
+            for (const c of graph_manip.getGraph().Connections.filter(myConnection)) {
+                console.log(c);
+                ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
+            }
+        }, 0);
 
         nodeClicked(newnode.Id);
     }

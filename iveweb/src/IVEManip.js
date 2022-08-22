@@ -189,7 +189,8 @@ export default async function IVEManip(storage, remote) {
             return ret;
         },
         disconnect: async (fromid, output, toid, input) => {
-            const without = GRAPH.Connections.filter(c => c.FromId !== fromid && c.OutputPort !== output && c.ToId !== toid && c.InputPort !== input);
+            const thisConnection = c => c.From === fromid && c.OutputPort === output && c.To === toid && c.InputPort === input;
+            const without = GRAPH.Connections.filter(c => !thisConnection(c));
 
             var pending = CreateMod({
                 Connections: without
