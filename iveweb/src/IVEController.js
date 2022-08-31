@@ -16,7 +16,6 @@ export async function IVEController(ui, graph_manip, inspector) {
 
     // UI callbacks are now subscribed to whatever system in the App
     // and called directly from the App.
-
     const createRequest = async (type, x, y) => {
         // manipulate the graph with this new node
         var created = await graph_manip.create(type, x, y);
@@ -120,12 +119,14 @@ export async function IVEController(ui, graph_manip, inspector) {
 
     const setNodeState = async (id, value) => {
         stageClicked();
-        const oldconnections = graph_manip.getGraph().Connections.filter(c => c.From === id || c.To === id);
+
+        // setNodeState will set the state by creating a new node and deleting the old one
         const newnode = await graph_manip.setNodeState(id, value);
 
-
+        // Remove this from the UI
         ui.removeNode(id);
 
+        // Add a new one back in
         ui.addNode(newnode);
 
         ui.info(`Set node ${id} to ${value}`);
@@ -136,11 +137,11 @@ export async function IVEController(ui, graph_manip, inspector) {
             const myConnection = c => c.From === newnode.Id || c.To === newnode.Id;
 
             for (const c of graph_manip.getGraph().Connections.filter(myConnection)) {
-                console.log(c);
                 ui.connect(c.From, c.OutputPort, c.To, c.InputPort);
             }
         }, 0);
 
+        // Re-select it
         nodeClicked(newnode.Id);
     }
 

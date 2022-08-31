@@ -64,8 +64,11 @@ function App() {
     // Create a controller and then subscribe to the graph changes
     const downstream_remote = IVEInterface(http_get, http_post);
 
+    // Embed a persistant save in the middle
+
     // Create a tap for setting the graph
-    // This is wonky way to patch the setting of a graph
+    // This is wonky way to patch the setting of a graph.
+    // And serialize it.
     const tap = await InspectorTap(downstream_remote.setGraph);
     setTap(tap);
     const remote = {

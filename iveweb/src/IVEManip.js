@@ -5,6 +5,12 @@ export default async function IVEManip(storage, remote) {
 
     var GRAPH = await RestoreGraph(storage);
 
+    const setGraph = async (graph) => {
+        var ret = await remote.setGraph(graph);
+        save(graph);
+        return ret;
+    }
+
     // Update the graph with typeinfo
     // Could fail, reset graph if it does
     try {
@@ -27,12 +33,14 @@ export default async function IVEManip(storage, remote) {
     }
 
     // Load that graph on the remote
+    console.log("IVEManip setting initial graph")
     await remote.setGraph(GRAPH);
 
 
-    const save = () => {
-        const tosave = JSON.stringify(GRAPH);
+    const save = (graph) => {
+        const tosave = JSON.stringify(graph);
         console.log("saved")
+        console.log(graph);
         // console.log(tosave);
         storage.setItem("GRAPH", tosave);
     }
@@ -54,7 +62,7 @@ export default async function IVEManip(storage, remote) {
             Nodes: [...GRAPH.Nodes, dtonode]
         });
         // See if the remote can create it
-        const ret = await remote.setGraph(pending);
+        const ret = await setGraph(pending);
 
         //console.log(ret);
 
@@ -77,8 +85,6 @@ export default async function IVEManip(storage, remote) {
 
         //console.log(GRAPH);
 
-        save();
-
         return desc;
     }
 
@@ -94,10 +100,10 @@ export default async function IVEManip(storage, remote) {
         }
 
         // See if the remote can create it
-        await remote.setGraph(pending);
+        await setGraph(pending);
         // If we get here, the create was successful
         GRAPH = pending;
-        save();
+
         return node;
     }
 
@@ -139,7 +145,7 @@ export default async function IVEManip(storage, remote) {
             const n = GRAPH.Nodes.find(n => n.Id === id);
             n.x = x;
             n.y = y;
-            save();
+            save(GRAPH);  // we need to manually save it here
         },
         connect: async (fromid, output, toid, input) => {
             // We must create a new ID for the to object in order
@@ -183,9 +189,8 @@ export default async function IVEManip(storage, remote) {
             });
             console.log("Trying to connect graph");
             console.log(pending);
-            const ret = await remote.setGraph(pending);
+            const ret = await setGraph(pending);
             GRAPH = pending;
-            save();
             return ret;
         },
         disconnect: async (fromid, output, toid, input) => {
@@ -195,9 +200,8 @@ export default async function IVEManip(storage, remote) {
             var pending = CreateMod({
                 Connections: without
             });
-            const ret = await remote.setGraph(pending);
+            const ret = await setGraph(pending);
             GRAPH = pending;
-            save();
             return ret;
         },
         removeNode: async id => {
@@ -207,9 +211,8 @@ export default async function IVEManip(storage, remote) {
                 Nodes: without,
                 Connections: connections_without
             });
-            const ret = await remote.setGraph(pending);
+            const ret = await setGraph(pending);
             GRAPH = pending;
-            save();
             return ret;
         },
         create,

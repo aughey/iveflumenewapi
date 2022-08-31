@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { Client } from '@stomp/stompjs';
 import EventEmitter from 'events';
+import { SerializeWrap } from './Serializer';
 
 export default async function InspectorTap(downstream_setgraph) {
     let tapped = [];
@@ -10,8 +11,9 @@ export default async function InspectorTap(downstream_setgraph) {
 
 
     const setGraph = async (graph) => {
-        console.log("Setting graph")
-        await runTap(graph);
+        console.log("InspectorTap Setting graph")
+        console.log(graph);
+        await serializedRunTap(graph);
         last_graph = graph;
     }
 
@@ -72,7 +74,7 @@ export default async function InspectorTap(downstream_setgraph) {
     const rabbitmq_host = addInfrastructure('Value-StringValue', { State: "localhost" });
     const rabbitmq_connect = addInfrastructure('RabbitMQOperations-ConnectToChannel');
     const rabbitmq_queuename = addInfrastructure('Value-StringValue', { State: myqueue });
-    const throttle_time = addInfrastructure('Value-Int32Value', { State: parseInt(1000/10.0).toString() });
+    const throttle_time = addInfrastructure('Value-Int32Value', { State: parseInt(1000/2.0).toString() });
     const send_action = addInfrastructure('RabbitMQOperations-SendQueueAction');
 
     connectInfrastructure(rabbitmq_host, "output", rabbitmq_connect, "host");
@@ -184,11 +186,13 @@ export default async function InspectorTap(downstream_setgraph) {
         }
     }
 
+    var serializedRunTap = SerializeWrap(runTap);
+
     // Tap a node
     const tap = (id, callback) => {
         if(!tapped.includes(id)) {
             tapped.push(id);
-            runTap(last_graph);
+            serializedRunTap(last_graph);
         }
 
         events.on(id, callback);
@@ -196,7 +200,7 @@ export default async function InspectorTap(downstream_setgraph) {
         return () => {
             events.off(id,callback);
             tapped = tapped.filter(i => i !== id);
-            runTap(last_graph);
+            serializedRunTap(last_graph);
         }
     }
 
