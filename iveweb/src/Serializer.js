@@ -18,7 +18,6 @@ export function SerializeWrap(fn) {
     function serialize() {
         // use arguments
         var args = arguments;
-        console.log(args);
         return new Promise((resolve, reject) => {
             pending.push(async () => {
                 try {

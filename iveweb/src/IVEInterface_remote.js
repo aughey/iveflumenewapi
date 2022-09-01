@@ -6,7 +6,7 @@ export function IVEInterface(provided_get, provided_post) {
     const post = (path, data) => provided_post(url(path), data);
 
     const command = async (graph) => {
-        console.log("Sending Graph:");
+        console.log("Remote Sending Graph:");
         console.log(graph);
 
         var ret = await post("command", graph);

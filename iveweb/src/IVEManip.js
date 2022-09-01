@@ -3,13 +3,15 @@ import { v4 as uuidv4 } from 'uuid';
 export default async function IVEManip(storage, remote) {
     // Possibly load this from persistant storage
 
-    var GRAPH = await RestoreGraph(storage);
-
     const setGraph = async (graph) => {
+        console.log("IVEManip sending graph...")
+        console.log(graph);
         var ret = await remote.setGraph(graph);
         save(graph);
         return ret;
     }
+
+    var GRAPH = await RestoreGraph(storage);
 
     // Update the graph with typeinfo
     // Could fail, reset graph if it does
@@ -17,11 +19,10 @@ export default async function IVEManip(storage, remote) {
         if (GRAPH.Nodes.length > 0) {
             const nodetypes = await remote.getTypeInfo(GRAPH.Nodes.map(n => n.Kind));
             for (var i = 0; i < GRAPH.Nodes.length; i++) {
+                delete nodetypes[i].Id
                 GRAPH.Nodes[i] = {
-                    ...nodetypes[i],
-                    Id: GRAPH.Nodes[i].Id,
-                    x: GRAPH.Nodes[i].x,
-                    y: GRAPH.Nodes[i].y,
+                    ...GRAPH.Nodes[i],
+                    ...nodetypes[i]
                 }
             }
         }
@@ -43,6 +44,10 @@ export default async function IVEManip(storage, remote) {
         console.log(graph);
         // console.log(tosave);
         storage.setItem("GRAPH", tosave);
+
+        const stored = storage.getItem("GRAPH")
+        console.log("stored")
+        console.log(JSON.parse(stored));
     }
 
     const CreateMod = (changes) => ({

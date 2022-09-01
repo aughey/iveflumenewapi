@@ -10,10 +10,10 @@ export default async function InspectorTap(downstream_setgraph) {
     const events = new EventEmitter();
 
 
-    const setGraph = async (graph) => {
-        console.log("InspectorTap Setting graph")
-        console.log(graph);
+    const returned_setGraph = async (graph) => {
         await serializedRunTap(graph);
+        console.log("InspectorTap remembering graph");
+        console.log(graph)
         last_graph = graph;
     }
 
@@ -85,6 +85,7 @@ export default async function InspectorTap(downstream_setgraph) {
 
     const runTap = async graph => {
         if(tapped.length === 0) {
+            console.log("InspectorTap has no taps, passing downstream")
             return await downstream_setgraph(graph);
         }
 
@@ -177,6 +178,9 @@ export default async function InspectorTap(downstream_setgraph) {
         }
 
         try {
+            console.log("InspectorTap Setting graph")
+            console.log(amended_graph);
+    
             await downstream_setgraph(amended_graph);
         } catch (e) {
             console.log("Got exception setting amended graph, trying original");
@@ -206,7 +210,7 @@ export default async function InspectorTap(downstream_setgraph) {
 
     return {
         tap: tap,
-        setGraph: setGraph,
+        setGraph: returned_setGraph,
         dispose: () => {
             subscription.unsubscribe();
             stomp.deactivate();
