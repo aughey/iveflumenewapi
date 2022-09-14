@@ -9,6 +9,7 @@ import IVEManip from "./IVEManip";
 
 import { Colors } from 'flume';
 import InspectorTap from "./InspectorTap";
+import { ShowGraph } from "./GraphView/ShowGraph";
 const colors = {
   'Double': Colors.blue,
   'Int32': Colors.green,
@@ -56,13 +57,14 @@ function App() {
   const [inspector, setInspector] = useState([]);
   const [tap, setTap] = useState(null);
   const [setNodeState, setSetNodeState] = useState(null);
+  const [remoteGraph, setRemoteGraph] = useState(null);
 
   const apiref = useRef(null);
 
   const apiCallback = useCallback(async api => {
     apiref.current = api;
     // Create a controller and then subscribe to the graph changes
-    const downstream_remote = IVEInterface(http_get, http_post);
+    const downstream_remote = IVEInterface(http_get, http_post, setRemoteGraph);
 
     // Embed a persistant save in the middle
 
@@ -136,6 +138,7 @@ function App() {
       </div>
       <button onClick={showToast}>Show Toast</button>
       {tap ? <Inspector tap={tap} nodes={inspector} setState={setNodeState}/> : null}
+      <ShowGraph graph={remoteGraph}/>
     </div>
   );
 }
@@ -193,7 +196,7 @@ const ShowNode = ({ node, tap, setState }) => {
 
 const Inspector = ({ nodes, tap, setState }) => {
   return (
-    <div className='inspector' style={{ minWidth: 200, minHeight: 200, position: 'absolute', left: 0, top: 0, border: '1px solid gray' }}>
+    <div className='inspector'>
       <h1>Inspector</h1>
       {nodes.map(node => (<ShowNode key={node.Id} tap={tap} node={node} setState={setState} />))}
     </div>

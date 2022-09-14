@@ -101,7 +101,7 @@
   scale: 3;
 }
 
-[data-flume-component="ports-outputs"] > div:first-child > label {
+[data-flume-component="ports-outputs"]>div:first-child>label {
   margin-top: 5px;
 }
 
@@ -135,4 +135,23 @@
 
 .inspector {
   background-color: rgba(255, 255, 255, 0.5);
+  min-width: 200;
+  min-height: 200;
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: 1px solid gray;
+}
+
+.remotegraph {
+  width: 200;
+  height: 200;
+  position: absolute;
+  right: 0;
+  top: 0;
+  border: 1px solid gray;
+}
+
+.graphviz svg {
+  width: 100%
 }

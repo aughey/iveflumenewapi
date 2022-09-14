@@ -1,7 +1,7 @@
 const prefix = "/api/";
 const url = (path) => prefix + path;
 
-export function IVEInterface(provided_get, provided_post) {
+export function IVEInterface(provided_get, provided_post, onSet) {
     const get = (path) => provided_get(url(path));
     const post = (path, data) => provided_post(url(path), data);
 
@@ -12,6 +12,9 @@ export function IVEInterface(provided_get, provided_post) {
         var ret = await post("command", graph);
         if (ret.Error) {
             throw new Error(ret.Error);
+        }
+        if (onSet) {
+            onSet(graph);
         }
         return ret;
     }
